@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    >
 
     <RelativeLayout
         android:id="@id/titlebar"
@@ -16,7 +16,7 @@
             android:text="@string/app_name"
             android:textColor="@color/MAIN_SUB"
             android:textStyle="bold"
-            android:textSize="@dimen/F2"
+            android:textSize="@dimen/F3"
             android:layout_centerInParent="true"/>
 
         <Button
@@ -25,7 +25,7 @@
             android:layout_height="45dp"
             android:background="@color/TRANSPARENT"
             android:layout_centerVertical="true"
-            android:textSize="@dimen/F5"
+            android:textSize="@dimen/F7"
             android:textColor="@color/TEXT_SUB"
             android:text="我"/>
 
@@ -35,12 +35,31 @@
             android:layout_height="45dp"
             android:background="@color/TRANSPARENT"
             android:layout_centerVertical="true"
-            android:textSize="@dimen/F5"
+            android:textSize="@dimen/F7"
             android:textColor="@color/TEXT_SUB"
             android:layout_alignParentRight="true"
             android:layout_marginRight="@dimen/interval_E"
-            android:visibility="gone"
             android:text="消息"/>
 
     </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/titlebar"
+        android:background="@color/TEXT_BG">
+
+        <com.baidu.mapapi.map.MapView
+            android:id="@+id/bmapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@id/iv_welcome"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@mipmap/welcome"
+        android:visibility="gone"/>
 </RelativeLayout>
