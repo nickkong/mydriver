@@ -31,11 +31,11 @@ import com.nickkong.commonlibrary.ui.activity.BaseActivity;
 import com.nickkong.commonlibrary.ui.listener.OnDialogClickListener;
 import com.nickkong.commonlibrary.util.Constant;
 import com.nickkong.commonlibrary.util.HttpUtil;
-import com.nickkong.commonlibrary.util.RequestAddress;
 import com.nickkong.commonlibrary.util.Tools;
 import com.umeng.analytics.MobclickAgent;
 import com.zhtaxi.haodidriver.HaodidriverApplication;
 import com.zhtaxi.haodidriver.R;
+import com.zhtaxi.haodidriver.util.RequestAddress;
 import com.zhtaxi.haodidriver.util.UpdateManager;
 
 import org.json.JSONException;
