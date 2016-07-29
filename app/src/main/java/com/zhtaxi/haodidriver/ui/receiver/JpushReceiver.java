@@ -23,7 +23,7 @@ import cn.jpush.android.api.JPushInterface;
  * 2) 接收不到自定义消息
  */
 public class JpushReceiver extends BroadcastReceiver {
-	private static final String TAG = "JPush";
+	private static final String TAG = "JpushReceiver";
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
@@ -34,7 +34,6 @@ public class JpushReceiver extends BroadcastReceiver {
             String regId = bundle.getString(JPushInterface.EXTRA_REGISTRATION_ID);
             Log.d(TAG, "[JpushReceiver] 接收Registration Id : " + regId);
             //send the Registration Id to your server...
-                        
         } else if (JPushInterface.ACTION_MESSAGE_RECEIVED.equals(intent.getAction())) {
         	Log.d(TAG, "[JpushReceiver] 接收到推送下来的自定义消息: " + bundle.getString(JPushInterface.EXTRA_MESSAGE));
         	processCustomMessage(context, bundle);
@@ -85,7 +84,7 @@ public class JpushReceiver extends BroadcastReceiver {
 					Iterator<String> it =  json.keys();
 
 					while (it.hasNext()) {
-						String myKey = it.next().toString();
+						String myKey = it.next();
 						sb.append("\nkey:" + key + ", value: [" +
 								myKey + " - " +json.optString(myKey) + "]");
 					}

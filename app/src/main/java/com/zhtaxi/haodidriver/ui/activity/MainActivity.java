@@ -48,6 +48,8 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import cn.jpush.android.api.JPushInterface;
+
 public class MainActivity extends BaseActivity {
 
     private String TAG = getClass().getSimpleName();
@@ -97,7 +99,7 @@ public class MainActivity extends BaseActivity {
      */
     @Override
     public void initView(){
-
+        Log.d(TAG,"RegistrationID==="+ JPushInterface.getRegistrationID(this));
 //        Button requestLocButton = (Button) findViewById(R.id.btn_getlocation);
 //        Button btn_message = (Button) findViewById(R.id.btn_message);
 //        btn_message.setOnClickListener(this);
@@ -464,7 +466,7 @@ public class MainActivity extends BaseActivity {
             timer.cancel();
             timer = null;
         }
-
+        JPushInterface.onPause(this);
         super.onPause();
     }
 
@@ -482,6 +484,8 @@ public class MainActivity extends BaseActivity {
             sb = new StringBuffer();
             doUploadGps();
         }
+
+        JPushInterface.onResume(this);
         super.onResume();
     }
 
