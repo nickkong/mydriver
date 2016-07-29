@@ -124,7 +124,8 @@ public class MainActivity extends BaseActivity {
         mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
                 MyLocationConfiguration.LocationMode.NORMAL, true, null));
         //佛山 23.031033,113.131019
-        LatLng ll = new LatLng(22.275715,113.534735);
+        //珠海 22.256915,113.562447
+        LatLng ll = new LatLng(22.256915,113.562447);
         MapStatus.Builder builder = new MapStatus.Builder();
         builder.target(ll).zoom(15.0f);
         mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
