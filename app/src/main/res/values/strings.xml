@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">好的司机</string>
+
+    <string name="title_login">登录</string>
+
+    <string name="update_tips">发现最新版本，是否更新?</string>
+    <string name="matchphone_tips">请输入正确手机号</string>
+    <string name="pwd_tips">密码不能为空</string>
+
+    <string name="mobile_matches">(13[0-9]|14[0-9]|15[0-9]|16[0-9]|17[0-9]|18[0-9])\\d{8}</string>
 </resources>

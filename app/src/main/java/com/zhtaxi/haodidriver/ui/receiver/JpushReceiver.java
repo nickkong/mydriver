@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.zhtaxi.haodidriver.ui.activity.MainActivity;
+import com.zhtaxi.haodidriver.util.PublicResource;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,6 +24,7 @@ import cn.jpush.android.api.JPushInterface;
  * 2) 接收不到自定义消息
  */
 public class JpushReceiver extends BroadcastReceiver {
+
 	private static final String TAG = "JpushReceiver";
 
 	@Override
@@ -32,7 +34,8 @@ public class JpushReceiver extends BroadcastReceiver {
 		
         if (JPushInterface.ACTION_REGISTRATION_ID.equals(intent.getAction())) {
             String regId = bundle.getString(JPushInterface.EXTRA_REGISTRATION_ID);
-            Log.d(TAG, "[JpushReceiver] 接收Registration Id : " + regId);
+			PublicResource.REGISTRATION_ID = regId;
+			Log.d(TAG, "[JpushReceiver] 接收Registration Id : " + regId);
             //send the Registration Id to your server...
         } else if (JPushInterface.ACTION_MESSAGE_RECEIVED.equals(intent.getAction())) {
         	Log.d(TAG, "[JpushReceiver] 接收到推送下来的自定义消息: " + bundle.getString(JPushInterface.EXTRA_MESSAGE));

@@ -88,9 +88,8 @@ public class MainActivity extends BaseActivity {
 
         initMap();
 
-        initWelcomePage();
+//        initWelcomePage();
 
-        MobclickAgent.enableEncrypt(true);
 
     }
 
@@ -127,7 +126,7 @@ public class MainActivity extends BaseActivity {
         //珠海 22.256915,113.562447
         LatLng ll = new LatLng(22.256915,113.562447);
         MapStatus.Builder builder = new MapStatus.Builder();
-        builder.target(ll).zoom(15.0f);
+        builder.target(ll).zoom(12.0f);
         mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
     }
@@ -243,11 +242,9 @@ public class MainActivity extends BaseActivity {
 
     private void getNearByUsers(){
 
-//        Map params = generateRequestMap();
         Map<String, Object> params = new HashMap();
-//        params.put("userId", sp_user.getString("userId",""));
-        params.put("lat", "23.658819");
-        params.put("lng", "116.607008");
+        params.put("lat", mylocation.getLatitude()+"");
+        params.put("lng", mylocation.getLongitude()+"");
 //        params.put("distanceLessThan", "5");
         HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_QUERYNEARBYUSERS,
                 RequestAddress.queryNearByUsers,params);
@@ -312,7 +309,6 @@ public class MainActivity extends BaseActivity {
                 MapStatus.Builder builder = new MapStatus.Builder();
                 builder.target(ll).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
-
 //                addMarker(location);
 
             }
@@ -481,10 +477,15 @@ public class MainActivity extends BaseActivity {
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();
 
-        if(!needLogin()){
-            sb = new StringBuffer();
-            doUploadGps();
-        }
+        //定时上传gps
+//        if(!needLogin()){
+//            sb = new StringBuffer();
+//            doUploadGps();
+//        }
+
+//        if(!needLogin()){
+//            getNearByUsers();
+//        }
 
         JPushInterface.onResume(this);
         super.onResume();
