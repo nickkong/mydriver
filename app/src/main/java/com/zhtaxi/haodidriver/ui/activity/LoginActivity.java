@@ -117,6 +117,9 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener{
             switch (msg.what) {
                 case Constant.HTTPUTIL_FAILURECODE:
 
+                    disLoadingDialog();
+
+                    Tools.showToast(LoginActivity.this,"登录失败");
                     break;
                 //登录
                 case SUCCESSCODE_LOGIN:

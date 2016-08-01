@@ -90,6 +90,8 @@ public class MainActivity extends BaseActivity {
 
 //        initWelcomePage();
 
+        checkUpdate();
+
 
     }
 
@@ -129,6 +131,25 @@ public class MainActivity extends BaseActivity {
         builder.target(ll).zoom(12.0f);
         mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
 
+    }
+
+    /**
+     * 检查更新
+     */
+    private void checkUpdate(){
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //wifi状态检查更新
+                    if(Tools.isWifiConnected(MainActivity.this)){
+                        UpdateManager mUpdateManager = new UpdateManager(MainActivity.this);
+                        mUpdateManager.sendUpdateRequest();
+                    }
+                } catch (Exception e) {
+                }
+            }
+        }, DISAPPEAR_DELAY);
     }
 
     /**
