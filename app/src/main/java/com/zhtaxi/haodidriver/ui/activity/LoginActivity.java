@@ -68,6 +68,13 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener{
         Button btn_login = (Button) findViewById(R.id.btn_login);
         btn_login.setOnClickListener(this);
 
+        //回显登录过的手机号码
+        String sp_phone = sp.getString(Constant.SP_PHONE_KEY, "");
+        if (!"".equals(sp_phone.trim())) {
+            et_phone.setText(sp_phone);
+            et_pwd.requestFocus();
+        }
+
     }
 
     @Override

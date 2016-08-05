@@ -1,5 +1,9 @@
 package com.zhtaxi.haodidriver.ui.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,12 +33,12 @@ import com.baidu.mapapi.model.LatLng;
 import com.nickkong.commonlibrary.service.LocationService;
 import com.nickkong.commonlibrary.ui.activity.BaseActivity;
 import com.nickkong.commonlibrary.ui.listener.OnDialogClickListener;
-import com.nickkong.commonlibrary.util.Constant;
 import com.nickkong.commonlibrary.util.HttpUtil;
 import com.nickkong.commonlibrary.util.Tools;
 import com.umeng.analytics.MobclickAgent;
 import com.zhtaxi.haodidriver.HaodidriverApplication;
 import com.zhtaxi.haodidriver.R;
+import com.zhtaxi.haodidriver.util.Constant;
 import com.zhtaxi.haodidriver.util.RequestAddress;
 import com.zhtaxi.haodidriver.util.UpdateManager;
 
@@ -62,6 +66,8 @@ public class MainActivity extends BaseActivity {
     private static final int SUCCESSCODE_QUERYNEARBYUSERS = 2;
     private static final int HANDLER_UPLOADGPS = 3;
 
+    public static boolean isForeground = false;
+    public static final String KEY_MESSAGE = "message";
     private long exitTime = 0;
     private LocationService locationService;
 //    private CustomViewPager vp_control;
@@ -92,6 +98,7 @@ public class MainActivity extends BaseActivity {
 
         checkUpdate();
 
+        registerMessageReceiver();
 
     }
 
@@ -330,7 +337,7 @@ public class MainActivity extends BaseActivity {
                 MapStatus.Builder builder = new MapStatus.Builder();
                 builder.target(ll).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
-//                addMarker(location);
+//                addMarkers(location);
 
             }
         }
@@ -339,7 +346,7 @@ public class MainActivity extends BaseActivity {
     /**
      * 模拟添加附近车辆
      */
-    private void addMarker(BDLocation location){
+    private void addMarkers(BDLocation location){
 
         Random ra =new Random();
         //定义Maker坐标点
@@ -389,6 +396,22 @@ public class MainActivity extends BaseActivity {
         mBaiduMap.addOverlay(makeroption6);
     }
 
+    /**
+     * 添加附近覆盖物
+     */
+    private void addmarker(double lat, double lng){
+        LatLng point = new LatLng(lat, lng);
+
+        //构建Marker图标
+        BitmapDescriptor bitmap = BitmapDescriptorFactory
+                .fromResource(R.mipmap.car_bearing);
+        //构建MarkerOption，用于在地图上添加Marker
+        OverlayOptions makeroption = new MarkerOptions()
+                .position(point).icon(bitmap);
+        //在地图上添加Marker，并显示
+        mBaiduMap.addOverlay(makeroption);
+    }
+
     Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -415,10 +438,14 @@ public class MainActivity extends BaseActivity {
                             reLogin();
                             showTipsDialog("登录信息失效，请重新登录",1,dialogClickListener);
                             //取消自动上传位置信息
-                            task.cancel();
-                            task = null;
-                            timer.cancel();
-                            timer = null;
+                            if(task!=null){
+                                task.cancel();
+                                task = null;
+                            }
+                            if(timer!=null){
+                                timer.cancel();
+                                timer = null;
+                            }
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -444,9 +471,9 @@ public class MainActivity extends BaseActivity {
         @Override
         public void doConfirm() {
             //未登录，跳转注册/登录页面
-//            if(needLogin()){
-//                startActivityByFade(new Intent(MainActivity.this, LoginActivity.class));
-//            }
+            if(needLogin()){
+                startActivityByFade(new Intent(MainActivity.this, LoginActivity.class),false);
+            }
         }
 
         @Override
@@ -470,6 +497,9 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onPause() {
         Log.d(TAG,"===onPause===");
+
+        isForeground = false;
+
         mMapView.onPause();
 
         locationService.unregisterListener(myListener);
@@ -491,6 +521,9 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onResume() {
         Log.d(TAG,"===onResume===");
+
+        isForeground = true;
+
         mMapView.onResume();
 
         locationService = ((HaodidriverApplication)getApplication()).locationService;
@@ -499,10 +532,10 @@ public class MainActivity extends BaseActivity {
         locationService.start();
 
         //定时上传gps
-//        if(!needLogin()){
-//            sb = new StringBuffer();
-//            doUploadGps();
-//        }
+        if(!needLogin()){
+            sb = new StringBuffer();
+            doUploadGps();
+        }
 
 //        if(!needLogin()){
 //            getNearByUsers();
@@ -515,11 +548,49 @@ public class MainActivity extends BaseActivity {
     @Override
     public void onDestroy() {
         Log.d(TAG,"===onDestroy===");
+        unregisterReceiver(mMessageReceiver);
         // 关闭定位图层
         mBaiduMap.setMyLocationEnabled(false);
         mMapView.onDestroy();
         mMapView = null;
         super.onDestroy();
+    }
+
+    private MessageReceiver mMessageReceiver;
+
+    public void registerMessageReceiver() {
+        mMessageReceiver = new MessageReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+        filter.addAction(Constant.MESSAGE_RECEIVED_ACTION);
+        registerReceiver(mMessageReceiver, filter);
+    }
+
+    public class MessageReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Constant.MESSAGE_RECEIVED_ACTION.equals(intent.getAction())) {
+                String message = intent.getStringExtra(KEY_MESSAGE);
+                Log.d(TAG,"message=="+message);
+                try {
+                    JSONObject jsonObject = new JSONObject(message);
+                    String event = jsonObject.getString("event");
+                    String userId = jsonObject.getString("userId");
+                    String lng = jsonObject.getString("lng");
+                    String lat = jsonObject.getString("lat");
+
+                    double d_lat = Double.parseDouble(lat);
+                    double d_lng = Double.parseDouble(lng);
+
+                    addmarker(d_lat,d_lng);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
     }
 
     @Override

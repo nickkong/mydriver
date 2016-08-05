@@ -50,6 +50,7 @@
                 android:background="@color/white"
                 android:textSize="@dimen/F8"
                 android:textColor="@color/TEXT_MAIN"
+                android:text="15913214860"
                 android:inputType="phone"/>
 
         </LinearLayout>
@@ -79,7 +80,8 @@
                 android:background="@color/white"
                 android:textSize="@dimen/F8"
                 android:textColor="@color/TEXT_MAIN"
-                android:layout_toRightOf="@id/tv_certCode"/>
+                android:layout_toRightOf="@id/tv_certCode"
+                android:text="123456"/>
 
         </RelativeLayout>
 
