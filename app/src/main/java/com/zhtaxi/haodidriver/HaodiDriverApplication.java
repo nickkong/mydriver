@@ -3,6 +3,8 @@ package com.zhtaxi.haodidriver;
 import android.app.Application;
 
 import com.baidu.mapapi.SDKInitializer;
+import com.iflytek.cloud.SpeechConstant;
+import com.iflytek.cloud.SpeechUtility;
 import com.nickkong.commonlibrary.service.LocationService;
 
 import cn.jpush.android.api.JPushInterface;
@@ -26,6 +28,8 @@ public class HaodidriverApplication extends Application {
         //初始化极光推送
         JPushInterface.setDebugMode(true);
         JPushInterface.init(this);
+        //初始化科大讯飞语音合成
+        SpeechUtility.createUtility(this, SpeechConstant.APPID +"=57a74009");
 
     }
 

@@ -30,6 +30,10 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.iflytek.cloud.SpeechConstant;
+import com.iflytek.cloud.SpeechError;
+import com.iflytek.cloud.SpeechSynthesizer;
+import com.iflytek.cloud.SynthesizerListener;
 import com.nickkong.commonlibrary.service.LocationService;
 import com.nickkong.commonlibrary.ui.activity.BaseActivity;
 import com.nickkong.commonlibrary.ui.listener.OnDialogClickListener;
@@ -48,7 +52,6 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -89,8 +92,6 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
 
         initView();
-
-//        initControl();
 
         initMap();
 
@@ -196,61 +197,6 @@ public class MainActivity extends BaseActivity {
     }
 
     /**
-     * 初始化底部操作栏viewpager
-     */
-//    private void initControl(){
-//        vp_control = (CustomViewPager) findViewById(R.id.vp_control);
-//        vp_control.setScanScroll(false);
-//        pages = new ArrayList<>();
-//
-//        tab1 = new HuishouFragment();
-//        tab2 = new YuecheFragment();
-//
-//        pages.add(tab1);
-//        pages.add(tab2);
-//
-//        FragmentPagerAdapter controlAdapter = new FragmentPagerAdapter(getSupportFragmentManager()) {
-//            @Override
-//            public Object instantiateItem(ViewGroup container, int position) {
-//                return super.instantiateItem(container, position);
-//            }
-//
-//            @Override
-//            public int getCount() {
-//                return pages.size();
-//            }
-//
-//            @Override
-//            public Fragment getItem(int arg0) {
-//                return pages.get(arg0);
-//            }
-//        };
-//        vp_control.setAdapter(controlAdapter);
-//    }
-
-//    @Override
-//    public void onClick(View v) {
-//
-//        //未登录，跳转注册/登录页面
-//        if(needLogin()){
-//            startActivityByFade(new Intent(this, LoginActivity.class));
-//        }else {
-//            switch (v.getId()){
-//                //进入消息中心
-//                case R.id.btn_message:
-//                    startActivity(new Intent(this, MessageActivity.class),false);
-////                    getNearByUsers();
-//                    break;
-//                //进入我的
-//                case R.id.btn_me:
-//                    startActivity(new Intent(this, MeActivity.class),false);
-////                    getPlace();
-//                    break;
-//            }
-//        }
-//    }
-
-    /**
      * 定时执行上传gps
      */
     private void doUploadGps(){
@@ -288,7 +234,7 @@ public class MainActivity extends BaseActivity {
     private void uploadGps(){
 //        Log.d(TAG,"sb.toString()==="+sb.toString());
         Map params = generateRequestMap();
-        params.put("licensePlate", "粤Y99999");
+//        params.put("licensePlate", "粤Y99999");
         params.put("isTrip", "0");
 //        params.put("orderNo", "0");
         params.put("mapType", "0");
@@ -344,59 +290,6 @@ public class MainActivity extends BaseActivity {
     }
 
     /**
-     * 模拟添加附近车辆
-     */
-    private void addMarkers(BDLocation location){
-
-        Random ra =new Random();
-        //定义Maker坐标点
-        LatLng point = new LatLng(location.getLatitude()+ra.nextDouble()*0.001, location.getLongitude()+ra.nextDouble()*0.001);
-        LatLng point1 = new LatLng(location.getLatitude()+ra.nextDouble()*0.001, location.getLongitude()-ra.nextDouble()*0.001);
-        LatLng point2 = new LatLng(location.getLatitude()-ra.nextDouble()*0.001, location.getLongitude()+ra.nextDouble()*0.001);
-        LatLng point3 = new LatLng(location.getLatitude()-ra.nextDouble()*0.001, location.getLongitude()+ra.nextDouble()*0.001);
-        LatLng point4 = new LatLng(location.getLatitude()+ra.nextDouble()*0.001, location.getLongitude()-ra.nextDouble()*0.001);
-        LatLng point5 = new LatLng(location.getLatitude()+ra.nextDouble()*0.001, location.getLongitude()-ra.nextDouble()*0.001);
-        LatLng point6 = new LatLng(location.getLatitude()+ra.nextDouble()*0.001, location.getLongitude()-ra.nextDouble()*0.001);
-
-        int num = (int)(1+Math.random()*(10-1+1));
-        int fnum = num*10;
-
-        //构建Marker图标
-        BitmapDescriptor bitmap = BitmapDescriptorFactory
-                .fromResource(R.mipmap.car_bearing);
-        //构建MarkerOption，用于在地图上添加Marker
-        OverlayOptions makeroption = new MarkerOptions()
-                .position(point).rotate(-fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption1 = new MarkerOptions()
-                .position(point1).rotate(fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption2 = new MarkerOptions()
-                .position(point2).rotate(-fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption3 = new MarkerOptions()
-                .position(point3).rotate(fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption4 = new MarkerOptions()
-                .position(point4).rotate(-fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption5 = new MarkerOptions()
-                .position(point5).rotate(fnum)
-                .icon(bitmap);
-        OverlayOptions makeroption6 = new MarkerOptions()
-                .position(point6).rotate(fnum)
-                .icon(bitmap);
-        //在地图上添加Marker，并显示
-        mBaiduMap.addOverlay(makeroption);
-        mBaiduMap.addOverlay(makeroption1);
-        mBaiduMap.addOverlay(makeroption2);
-        mBaiduMap.addOverlay(makeroption3);
-        mBaiduMap.addOverlay(makeroption4);
-        mBaiduMap.addOverlay(makeroption5);
-        mBaiduMap.addOverlay(makeroption6);
-    }
-
-    /**
      * 添加附近覆盖物
      */
     private void addmarker(double lat, double lng){
@@ -404,7 +297,7 @@ public class MainActivity extends BaseActivity {
 
         //构建Marker图标
         BitmapDescriptor bitmap = BitmapDescriptorFactory
-                .fromResource(R.mipmap.car_bearing);
+                .fromResource(R.mipmap.hand);
         //构建MarkerOption，用于在地图上添加Marker
         OverlayOptions makeroption = new MarkerOptions()
                 .position(point).icon(bitmap);
@@ -479,6 +372,52 @@ public class MainActivity extends BaseActivity {
         @Override
         public void doConfirm(int type) {
 
+        }
+    };
+
+    private void speech() {
+        //1.创建SpeechSynthesizer对象, 第二个参数：本地合成时传InitListener
+        SpeechSynthesizer mTts = SpeechSynthesizer.createSynthesizer(this, null);
+        //2.合成参数设置，详见《科大讯飞MSC API手册(Android)》SpeechSynthesizer 类
+        mTts.setParameter(SpeechConstant.VOICE_NAME, "xiaoyan");//设置发音人
+        mTts.setParameter(SpeechConstant.SPEED, "50");//设置语速
+        mTts.setParameter(SpeechConstant.VOLUME, "80");//设置音量，范围0~100
+        mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD); //设置云端
+        //3.开始合成
+        mTts.startSpeaking("距离你150米有乘客挥手", mSynListener);
+    }
+
+    //合成监听器
+    private SynthesizerListener mSynListener = new SynthesizerListener() {
+
+        //会话结束回调接口，没有错误时，error为null
+        public void onCompleted(SpeechError error) {
+        }
+
+        //缓冲进度回调
+        //percent为缓冲进度0~100，beginPos为缓冲音频在文本中开始位置，endPos表示缓冲音频在文本中结束位置，info为附加信息。
+        public void onBufferProgress(int percent, int beginPos, int endPos, String info) {
+        }
+
+        //开始播放
+        public void onSpeakBegin() {
+        }
+
+        //暂停播放
+        public void onSpeakPaused() {
+        }
+
+        //播放进度回调
+        //percent为播放进度0~100,beginPos为播放音频在文本中开始位置，endPos表示播放音频在文本中结束位置.
+        public void onSpeakProgress(int percent, int beginPos, int endPos) {
+        }
+
+        //恢复播放回调接口
+        public void onSpeakResumed() {
+        }
+
+        //会话事件回调接口
+        public void onEvent(int arg0, int arg1, int arg2, Bundle arg3) {
         }
     };
 
@@ -584,6 +523,7 @@ public class MainActivity extends BaseActivity {
                     double d_lng = Double.parseDouble(lng);
 
                     addmarker(d_lat,d_lng);
+                    speech();
 
                 } catch (JSONException e) {
                     e.printStackTrace();
