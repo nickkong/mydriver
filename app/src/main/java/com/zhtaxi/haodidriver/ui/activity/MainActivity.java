@@ -4,16 +4,29 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.AnimationSet;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
@@ -43,12 +56,14 @@ import com.umeng.analytics.MobclickAgent;
 import com.zhtaxi.haodidriver.HaodidriverApplication;
 import com.zhtaxi.haodidriver.R;
 import com.zhtaxi.haodidriver.util.Constant;
+import com.zhtaxi.haodidriver.util.PublicResource;
 import com.zhtaxi.haodidriver.util.RequestAddress;
 import com.zhtaxi.haodidriver.util.UpdateManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +72,7 @@ import java.util.TimerTask;
 
 import cn.jpush.android.api.JPushInterface;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements OnClickListener{
 
     private String TAG = getClass().getSimpleName();
 
@@ -72,6 +87,7 @@ public class MainActivity extends BaseActivity {
     public static boolean isForeground = false;
     public static final String KEY_MESSAGE = "message";
     private long exitTime = 0;
+    private int screenWidth;
     private LocationService locationService;
 //    private CustomViewPager vp_control;
     private List<Fragment> pages;
@@ -85,17 +101,28 @@ public class MainActivity extends BaseActivity {
     private Timer timer;
     private TimerTask task;
 
+    private Button btn_control_start,btn_control_empty,btn_control_full;
+    private ImageView btn_control_ring;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        screenWidth = size.x;
+
         setContentView(R.layout.activity_main);
+
+//        LatLng point1 = new LatLng(23.065671,113.143372);
+//        LatLng point2 = new LatLng(23.065669,113.143335);
+//        double distance = DistanceUtil.getDistance(point1,point2);
+//        Log.d(TAG,"distance===="+distance);
 
         initView();
 
         initMap();
-
-//        initWelcomePage();
 
         checkUpdate();
 
@@ -108,12 +135,13 @@ public class MainActivity extends BaseActivity {
      */
     @Override
     public void initView(){
-        Log.d(TAG,"RegistrationID==="+ JPushInterface.getRegistrationID(this));
-//        Button requestLocButton = (Button) findViewById(R.id.btn_getlocation);
-//        Button btn_message = (Button) findViewById(R.id.btn_message);
-//        btn_message.setOnClickListener(this);
-//        Button btn_me = (Button) findViewById(R.id.btn_me);
-//        btn_me.setOnClickListener(this);
+        btn_control_start = (Button) findViewById(R.id.btn_control_start);
+        btn_control_start.setOnClickListener(this);
+        btn_control_empty = (Button) findViewById(R.id.btn_control_empty);
+        btn_control_empty.setOnClickListener(this);
+        btn_control_full = (Button) findViewById(R.id.btn_control_full);
+        btn_control_full.setOnClickListener(this);
+        btn_control_ring = (ImageView) findViewById(R.id.btn_control_ring);
     }
 
     /**
@@ -131,7 +159,7 @@ public class MainActivity extends BaseActivity {
         BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory
                 .fromResource(R.mipmap.car_bearing);
         mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
-                MyLocationConfiguration.LocationMode.NORMAL, true, null));
+                MyLocationConfiguration.LocationMode.FOLLOWING, true, null));
         //佛山 23.031033,113.131019
         //珠海 22.256915,113.562447
         LatLng ll = new LatLng(22.256915,113.562447);
@@ -148,42 +176,6 @@ public class MainActivity extends BaseActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                try {
-                    //wifi状态检查更新
-                    if(Tools.isWifiConnected(MainActivity.this)){
-                        UpdateManager mUpdateManager = new UpdateManager(MainActivity.this);
-                        mUpdateManager.sendUpdateRequest();
-                    }
-                } catch (Exception e) {
-                }
-            }
-        }, DISAPPEAR_DELAY);
-    }
-
-    /**
-     * 初始化欢迎页
-     */
-    private void initWelcomePage(){
-        final ImageView iv_welcome;
-        iv_welcome = (ImageView) findViewById(R.id.iv_welcome);
-        iv_welcome.setVisibility(View.VISIBLE);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                AnimationSet animationSet = new AnimationSet(true);
-                AlphaAnimation alphaAnimation = new AlphaAnimation(1,0);
-                alphaAnimation.setDuration(DISAPPEAR_DELAY - APPEAR_DELAY);
-                animationSet.addAnimation(alphaAnimation);
-                iv_welcome.setAnimation(animationSet);
-            }
-        }, APPEAR_DELAY);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                iv_welcome.setVisibility(View.GONE);
-
                 try {
                     //wifi状态检查更新
                     if(Tools.isWifiConnected(MainActivity.this)){
@@ -232,15 +224,94 @@ public class MainActivity extends BaseActivity {
      * locations=纬度1,经度1,时间1long型;纬度2,经度2,时间2long型;纬度3,经度3,时间3long型;纬度4,经度4,时间4long型;
      */
     private void uploadGps(){
-//        Log.d(TAG,"sb.toString()==="+sb.toString());
-        Map params = generateRequestMap();
+        //有位置信息才上传
+        if(sb.toString().length()>0){
+            Map params = generateRequestMap();
 //        params.put("licensePlate", "粤Y99999");
-        params.put("isTrip", "0");
+            params.put("isTrip", "0");
 //        params.put("orderNo", "0");
-        params.put("mapType", "0");
-        params.put("locations", sb.toString());
-        HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_UPLOADGPS,
-                RequestAddress.uploadGps,params);
+            params.put("mapType", "0");
+            params.put("locations", sb.toString());
+            HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_UPLOADGPS,
+                    RequestAddress.uploadGps,params);
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btn_control_start:
+
+                //出车中，切换为收车
+                if(PublicResource.isTrip){
+                    btn_control_start.setText("出车");
+                    btn_control_start.setBackgroundResource(R.mipmap.main_control_panel_btn_start_off_normal);
+                    btn_control_start.setTextColor(getResources().getColor(R.color.white));
+                    btn_control_empty.setVisibility(View.GONE);
+                    btn_control_full.setVisibility(View.GONE);
+                    btn_control_ring.clearAnimation();
+                    btn_control_ring.setVisibility(View.GONE);
+                    PublicResource.isTrip = false;
+                    PublicResource.isFull = false;
+                }
+                //收车中，切换为出车
+                else {
+                    btn_control_empty.setVisibility(View.VISIBLE);
+                    btn_control_full.setVisibility(View.VISIBLE);
+                    btn_control_start.setText("听单中");
+                    btn_control_start.setTextColor(getResources().getColor(R.color.MAIN));
+                    btn_control_start.setBackgroundResource(R.mipmap.main_control_panel_btn_listening_cover);
+                    btn_control_ring.setVisibility(View.VISIBLE);
+                    //设置听单中的旋转效果
+                    RotateAnimation rotateAnimation = new RotateAnimation(0f,360f, Animation.RELATIVE_TO_SELF,
+                            0.5f, Animation.RELATIVE_TO_SELF,0.5f);
+                    rotateAnimation.setDuration(1000);
+                    rotateAnimation.setRepeatCount(100000);//设置重复次数
+                    rotateAnimation.setInterpolator(new LinearInterpolator());//不停顿
+                    btn_control_ring.startAnimation(rotateAnimation);
+                    PublicResource.isTrip = true;
+                }
+                break;
+            case R.id.btn_control_empty:
+                //载客，切换为空车
+                if(PublicResource.isFull){
+                    btn_control_empty.setBackgroundResource(R.mipmap.main_control_panel_btn_mode_normal);
+                    btn_control_empty.setTextColor(getResources().getColor(R.color.MAIN));
+                    btn_control_full.setBackgroundResource(R.mipmap.main_control_panel_btn_end_off_normal);
+                    btn_control_full.setTextColor(getResources().getColor(R.color.white));
+                    PublicResource.isFull = false;
+                }
+                //空车，弹出设置项
+                else {
+                    //设置中，收起弹出框
+                    if(PublicResource.isEmptySetting){
+                        other_popupWindow.dismiss();
+                        btn_control_empty.setBackgroundResource(R.mipmap.main_control_panel_btn_mode_normal);
+                        PublicResource.isEmptySetting = false;
+                    }else {
+                        showPopupWindow();
+                        btn_control_empty.setBackgroundResource(R.mipmap.main_control_panel_btn_mode_normal_reverse);
+                        PublicResource.isEmptySetting = true;
+                    }
+
+                }
+                break;
+            case R.id.btn_control_full:
+                PublicResource.isEmptySetting = false;
+                //载客，弹出设置项
+                if(PublicResource.isFull){
+
+                }
+                //空车，切换为载客
+                else {
+                    btn_control_empty.setBackgroundResource(R.mipmap.main_control_panel_btn_end_off_normal);
+                    btn_control_empty.setTextColor(getResources().getColor(R.color.white));
+                    btn_control_full.setBackgroundResource(R.mipmap.main_control_panel_btn_mode_normal);
+                    btn_control_full.setTextColor(getResources().getColor(R.color.MAIN));
+                    PublicResource.isFull = true;
+                }
+                break;
+        }
     }
 
     /**
@@ -255,35 +326,29 @@ public class MainActivity extends BaseActivity {
                 return;
             }
             mylocation = location;
-//            if(tab1!=null && tab2!=null){
-//                if(tab1.address_start!=null && tab2.address_start!=null){
-//                    tab1.address_start.setText(location.getLocationDescribe());
-//                    tab2.address_start.setText(location.getLocationDescribe());
-//                }
-//            }
+
+            double lat = location.getLatitude();
+            double lng = location.getLongitude();
 
             //经度和纬度都不是返回4.9E-324才记录
-            if(!Constant.LOCATION_ERROR.equals(location.getLatitude())&&
-                    !Constant.LOCATION_ERROR.equals(location.getLongitude())){
-                sb.append(location.getLatitude()+","+location.getLongitude()+","+System.currentTimeMillis()+";");
+            if(!Constant.LOCATION_ERROR.equals(lat+"") && !Constant.LOCATION_ERROR.equals(lng+"")){
+                sb.append(lat+","+lng+","+System.currentTimeMillis()+";");
             }
 
             MyLocationData locData = new MyLocationData.Builder()
                     .accuracy(location.getRadius())
-                    .direction(location.getDerect()).latitude(location.getLatitude())
-                    .longitude(location.getLongitude()).build();
+                    .direction(location.getDerect()).latitude(lat)
+                    .longitude(lng).build();
 
             mBaiduMap.setMyLocationData(locData);
 
             if (isFirstLoc) {
 
                 isFirstLoc = false;
-                LatLng ll = new LatLng(location.getLatitude(),
-                        location.getLongitude());
+                LatLng ll = new LatLng(lat,lng);
                 MapStatus.Builder builder = new MapStatus.Builder();
                 builder.target(ll).zoom(18.0f);
                 mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
-//                addMarkers(location);
 
             }
         }
@@ -421,6 +486,82 @@ public class MainActivity extends BaseActivity {
         }
     };
 
+    private PopupWindow other_popupWindow;
+    private LinearLayout popupWindowLayout;
+    private ListView popupwindow_listview;
+    private List<Map<String, Object>> popupWindowList = new ArrayList<>();
+    private SimpleAdapter popupWindowAdapter;
+
+    /**
+     * 弹出设置
+     */
+    private void showPopupWindow() {
+
+        if (popupWindowLayout == null) {
+
+            popupWindowLayout = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.popupwindow_view, null);
+            popupWindowLayout.setHorizontalGravity(Gravity.CENTER);
+
+//            popupwindow_listview = (ListView) popupWindowLayout.findViewById(R.id.popupwindow_listview);
+//            popupwindow_listview.setClickable(true);
+//            LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) popupwindow_listview.getLayoutParams();
+//            layoutParams.width = screenWidth / 3 - getResources().getDimensionPixelSize(R.dimen.line) * 2;
+//            layoutParams.height = LinearLayout.LayoutParams.WRAP_CONTENT;
+//            layoutParams.gravity = Gravity.CENTER;
+//            popupwindow_listview.setLayoutParams(layoutParams);
+//
+//            popupwindow_listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                @Override
+//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//
+//                    other_popupWindow.dismiss();
+//
+//                    switch ((int) ((Map<String, Object>) parent.getAdapter().getItem(position)).get("tag")) {
+//                        case 1:
+//                            Intent openCameraIntent = new Intent(MainActivity.this, CaptureActivity.class);
+//                            startActivity(openCameraIntent);
+//                            break;
+//                        case 2:
+//                            findViewById(R.id.btn_message).performClick();
+//                            break;
+//
+//                    }
+//
+//                }
+//            });
+
+//            popupWindowAdapter = new SimpleAdapter(this, popupWindowList, R.layout.popupwindow_item_view,
+//                    new String[]{"img", "txt"}, new int[]{R.id.img, R.id.txt});
+//            popupwindow_listview.setAdapter(popupWindowAdapter);
+
+            other_popupWindow = new PopupWindow(popupWindowLayout,
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, false);
+            other_popupWindow.setBackgroundDrawable(new BitmapDrawable(getResources()));
+            other_popupWindow.setFocusable(true);
+            other_popupWindow.setTouchable(false);
+            other_popupWindow.setOutsideTouchable(false);
+
+        }
+
+//        popupWindowList.clear();
+//
+//        Map<String, Object> item = new HashMap<>();
+//        item.put("img", R.mipmap.start);
+//        item.put("txt", "扫一扫");
+//        item.put("tag", 1);
+//        popupWindowList.add(item);
+//
+//        item = new HashMap<>();
+//        item.put("img", R.mipmap.end);
+//        item.put("txt", "消息");
+//        item.put("tag", 2);
+//        popupWindowList.add(item);
+
+//        popupWindowAdapter.notifyDataSetChanged();
+
+        other_popupWindow.showAsDropDown(findViewById(R.id.btn_control_empty), screenWidth , 0);
+    }
+
     @Override
     protected void onStart() {
         Log.d(TAG,"===onStart===");
@@ -492,6 +633,8 @@ public class MainActivity extends BaseActivity {
         mBaiduMap.setMyLocationEnabled(false);
         mMapView.onDestroy();
         mMapView = null;
+
+        btn_control_ring.clearAnimation();
         super.onDestroy();
     }
 
