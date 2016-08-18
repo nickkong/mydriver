@@ -83,6 +83,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     private static final int SUCCESSCODE_UPLOADGPS = 1;
     private static final int SUCCESSCODE_QUERYNEARBYUSERS = 2;
     private static final int HANDLER_UPLOADGPS = 3;
+    private static final int SUCCESSCODE_CONFIRMWAVE = 4;
 
     public static boolean isForeground = false;
     public static final String KEY_MESSAGE = "message";
@@ -103,6 +104,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     private Button btn_control_start,btn_control_empty,btn_control_full;
     private ImageView btn_control_ring;
+
+    private String matchingKey;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -418,6 +421,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     uploadGps();
                     sb = new StringBuffer();
                     break;
+                //匹配挥手成功
+                case SUCCESSCODE_CONFIRMWAVE:
+
+                    break;
             }
         }
     };
@@ -432,6 +439,26 @@ public class MainActivity extends BaseActivity implements OnClickListener{
             if(needLogin()){
                 startActivityByFade(new Intent(MainActivity.this, LoginActivity.class),false);
             }
+        }
+
+        @Override
+        public void doConfirm(int type) {
+
+        }
+    };
+
+    /**
+     * 按钮事件监听
+     */
+    private OnDialogClickListener confirmIsTripClickListener = new OnDialogClickListener() {
+        @Override
+        public void doConfirm() {
+            //确认上车
+            Map<String, Object> params = new HashMap();
+            params.put("haode_session_id", sp_user.getString("sessionId",""));
+            params.put("matchingKey", matchingKey);
+            HttpUtil.doGet(TAG,MainActivity.this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_CONFIRMWAVE,
+                    RequestAddress.confirmWave,params);
         }
 
         @Override
@@ -658,15 +685,23 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                 try {
                     JSONObject jsonObject = new JSONObject(message);
                     String event = jsonObject.getString("event");
-                    String userId = jsonObject.getString("userId");
-                    String lng = jsonObject.getString("lng");
-                    String lat = jsonObject.getString("lat");
+                    //有乘客挥手
+                    if(Constant.EVENT_HUISHOUSTART.equals(event)){
+                        String userId = jsonObject.getString("userId");
+                        String lng = jsonObject.getString("lng");
+                        String lat = jsonObject.getString("lat");
 
-                    double d_lat = Double.parseDouble(lat);
-                    double d_lng = Double.parseDouble(lng);
+                        double d_lat = Double.parseDouble(lat);
+                        double d_lng = Double.parseDouble(lng);
 
-                    addmarker(d_lat,d_lng);
-                    speech();
+                        addmarker(d_lat,d_lng);
+                        speech();
+                    }
+                    //成功挥手匹配，弹出确认
+                    if(Constant.EVENT_HUISHOUMATCH.equals(event)){
+                        matchingKey = jsonObject.getString("matchingKey");
+                        showTipsDialog("已成功为您匹配到乘客，乘客是否已上车？",2,confirmIsTripClickListener);
+                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
