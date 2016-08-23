@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -56,6 +55,7 @@ import com.umeng.analytics.MobclickAgent;
 import com.zhtaxi.haodidriver.HaodidriverApplication;
 import com.zhtaxi.haodidriver.R;
 import com.zhtaxi.haodidriver.util.Constant;
+import com.zhtaxi.haodidriver.util.LogUtil;
 import com.zhtaxi.haodidriver.util.PublicResource;
 import com.zhtaxi.haodidriver.util.RequestAddress;
 import com.zhtaxi.haodidriver.util.UpdateManager;
@@ -124,7 +124,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 //        LatLng point1 = new LatLng(23.065671,113.143372);
 //        LatLng point2 = new LatLng(23.065669,113.143335);
 //        double distance = DistanceUtil.getDistance(point1,point2);
-//        Log.d(TAG,"distance===="+distance);
+//        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"distance===="+distance);
 
         initView();
 
@@ -624,19 +624,19 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     @Override
     protected void onStart() {
-        Log.d(TAG,"===onStart===");
+        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"===onStart===");
         super.onStart();
     }
 
     @Override
     protected void onStop() {
-        Log.d(TAG,"===onStop===");
+        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"===onStop===");
         super.onStop();
     }
 
     @Override
     public void onPause() {
-        Log.d(TAG,"===onPause===");
+        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"===onPause===");
 
         isForeground = false;
 
@@ -652,7 +652,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     @Override
     public void onResume() {
-        Log.d(TAG,"===onResume===");
+        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"===onResume===");
 
         isForeground = true;
 
@@ -679,7 +679,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     @Override
     public void onDestroy() {
-        Log.d(TAG,"===onDestroy===");
+        LogUtil.d(Constant.DEVELOPER_MODE,TAG,"===onDestroy===");
         unregisterReceiver(mMessageReceiver);
         // 关闭定位图层
         mBaiduMap.setMyLocationEnabled(false);
@@ -706,7 +706,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         public void onReceive(Context context, Intent intent) {
             if (Constant.MESSAGE_RECEIVED_ACTION.equals(intent.getAction())) {
                 String message = intent.getStringExtra(KEY_MESSAGE);
-                Log.d(TAG,"message=="+message);
                 try {
                     JSONObject jsonObject = new JSONObject(message);
                     String event = jsonObject.getString("event");
@@ -751,7 +750,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (KeyEvent.KEYCODE_HEADSETHOOK == keyCode) { //按下了耳机键
-            Log.d(TAG,"event.getRepeatCount()="+event.getRepeatCount());
+            LogUtil.d(Constant.DEVELOPER_MODE,TAG,"event.getRepeatCount()="+event.getRepeatCount());
             if (event.getRepeatCount() == 0) {  //如果长按的话，getRepeatCount值会一直变大
                 //短按
                 Toast.makeText(this,"短按",Toast.LENGTH_SHORT).show();
