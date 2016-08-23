@@ -17,5 +17,6 @@ public class RequestAddress {
     public final static String queryNearByUsers = APP_URL + "queryNearByUsers";
     public final static String suggestion = APP_URL + "suggestion";
     public final static String confirmWave = APP_URL + "confirmWave";
+    public final static String arriveDestination = APP_URL + "arriveDestination";
 
 }

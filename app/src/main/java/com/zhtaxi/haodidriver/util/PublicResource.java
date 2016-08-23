@@ -7,7 +7,7 @@ package com.zhtaxi.haodidriver.util;
 public class PublicResource {
 
     public static String REGISTRATION_ID;
-    public static boolean isTrip;
+    public static boolean isWorking; //是否出车中
     public static boolean isFull;
     public static boolean isEmptySetting;
 }

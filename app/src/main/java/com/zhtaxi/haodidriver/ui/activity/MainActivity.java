@@ -84,13 +84,13 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     private static final int SUCCESSCODE_QUERYNEARBYUSERS = 2;
     private static final int HANDLER_UPLOADGPS = 3;
     private static final int SUCCESSCODE_CONFIRMWAVE = 4;
+    private static final int SUCCESSCODE_ARRIVEDESTINATION = 5;
 
     public static boolean isForeground = false;
     public static final String KEY_MESSAGE = "message";
     private long exitTime = 0;
     private int screenWidth;
     private LocationService locationService;
-//    private CustomViewPager vp_control;
     private List<Fragment> pages;
     public MyLocationListenner myListener = new MyLocationListenner();
     private MapView mMapView;
@@ -105,7 +105,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     private Button btn_control_start,btn_control_empty,btn_control_full;
     private ImageView btn_control_ring;
 
-    private String matchingKey;
+    private String matchingKey,isTrip,orderNo;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -115,6 +115,9 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         Point size = new Point();
         display.getSize(size);
         screenWidth = size.x;
+
+        isTrip = "0";
+        orderNo = "0";
 
         setContentView(R.layout.activity_main);
 
@@ -144,6 +147,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         btn_control_empty.setOnClickListener(this);
         btn_control_full = (Button) findViewById(R.id.btn_control_full);
         btn_control_full.setOnClickListener(this);
+        Button btn_me = (Button) findViewById(R.id.btn_me);
+        btn_me.setOnClickListener(this);
         btn_control_ring = (ImageView) findViewById(R.id.btn_control_ring);
     }
 
@@ -209,6 +214,21 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     }
 
+    /**
+     * 取消自动上传位置信息
+     */
+    private void doCancelUpdateGps() {
+
+        if(task!=null){
+            task.cancel();
+            task = null;
+        }
+        if(timer!=null){
+            timer.cancel();
+            timer = null;
+        }
+    }
+
     private void getNearByUsers(){
 
         Map<String, Object> params = new HashMap();
@@ -231,8 +251,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         if(sb.toString().length()>0){
             Map params = generateRequestMap();
 //        params.put("licensePlate", "粤Y99999");
-            params.put("isTrip", "0");
-//        params.put("orderNo", "0");
+            params.put("isTrip", isTrip);
+            if("1".equals(isTrip)){
+                params.put("orderNo", orderNo);
+            }
             params.put("mapType", "0");
             params.put("locations", sb.toString());
             HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_UPLOADGPS,
@@ -243,10 +265,16 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+            case R.id.btn_me:
+                Map params = generateRequestMap();
+                params.put("orderNo", orderNo);
+                HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_ARRIVEDESTINATION,
+                        RequestAddress.arriveDestination,params);
+                break;
             case R.id.btn_control_start:
 
                 //出车中，切换为收车
-                if(PublicResource.isTrip){
+                if(PublicResource.isWorking){
                     btn_control_start.setText("出车");
                     btn_control_start.setBackgroundResource(R.mipmap.main_control_panel_btn_start_off_normal);
                     btn_control_start.setTextColor(getResources().getColor(R.color.white));
@@ -254,8 +282,9 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     btn_control_full.setVisibility(View.GONE);
                     btn_control_ring.clearAnimation();
                     btn_control_ring.setVisibility(View.GONE);
-                    PublicResource.isTrip = false;
+                    PublicResource.isWorking = false;
                     PublicResource.isFull = false;
+                    doCancelUpdateGps();
                 }
                 //收车中，切换为出车
                 else {
@@ -272,7 +301,12 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     rotateAnimation.setRepeatCount(100000);//设置重复次数
                     rotateAnimation.setInterpolator(new LinearInterpolator());//不停顿
                     btn_control_ring.startAnimation(rotateAnimation);
-                    PublicResource.isTrip = true;
+                    PublicResource.isWorking = true;
+                    //出车，开始定时上传gps
+                    if(!needLogin()){
+                        sb = new StringBuffer();
+                        doUploadGps();
+                    }
                 }
                 break;
             case R.id.btn_control_empty:
@@ -342,7 +376,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     .accuracy(location.getRadius())
                     .direction(location.getDerect()).latitude(lat)
                     .longitude(lng).build();
-
             mBaiduMap.setMyLocationData(locData);
 
             if (isFirstLoc) {
@@ -398,15 +431,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                         else if (Constant.RECODE_FAILED_SESSION_WRONG.equals(result)) {
                             reLogin();
                             showTipsDialog("登录信息失效，请重新登录",1,dialogClickListener);
-                            //取消自动上传位置信息
-                            if(task!=null){
-                                task.cancel();
-                                task = null;
-                            }
-                            if(timer!=null){
-                                timer.cancel();
-                                timer = null;
-                            }
+                            doCancelUpdateGps();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -418,12 +443,20 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     break;
                 //定时上传GPS
                 case HANDLER_UPLOADGPS:
+                    if (mylocation.getLocType() == BDLocation.TypeGpsLocation){
+                        speech(mylocation.getSpeed()+"");
+                    }
+
                     uploadGps();
                     sb = new StringBuffer();
                     break;
                 //匹配挥手成功
                 case SUCCESSCODE_CONFIRMWAVE:
 
+                    break;
+                //到达，订单结束
+                case SUCCESSCODE_ARRIVEDESTINATION:
+                    isTrip = "0";
                     break;
             }
         }
@@ -437,7 +470,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         public void doConfirm() {
             //未登录，跳转注册/登录页面
             if(needLogin()){
-                startActivityByFade(new Intent(MainActivity.this, LoginActivity.class),false);
+                startActivityByFade(new Intent(MainActivity.this, LoginActivity.class),true);
             }
         }
 
@@ -467,7 +500,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         }
     };
 
-    private void speech() {
+    private void speech(String content) {
         //1.创建SpeechSynthesizer对象, 第二个参数：本地合成时传InitListener
         SpeechSynthesizer mTts = SpeechSynthesizer.createSynthesizer(this, null);
         //2.合成参数设置，详见《科大讯飞MSC API手册(Android)》SpeechSynthesizer 类
@@ -476,7 +509,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         mTts.setParameter(SpeechConstant.VOLUME, "80");//设置音量，范围0~100
         mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD); //设置云端
         //3.开始合成
-        mTts.startSpeaking("距离你150米有乘客挥手", mSynListener);
+        mTts.startSpeaking(content, mSynListener);
     }
 
     //合成监听器
@@ -612,15 +645,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         locationService.unregisterListener(myListener);
         locationService.stop();
 
-        //取消自动上传位置信息
-        if(task!=null){
-            task.cancel();
-            task = null;
-        }
-        if(timer!=null){
-            timer.cancel();
-            timer = null;
-        }
+        doCancelUpdateGps();
         JPushInterface.onPause(this);
         super.onPause();
     }
@@ -638,8 +663,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();
 
-        //定时上传gps
-        if(!needLogin()){
+        //出车，开始定时上传gps
+        if(!needLogin() && PublicResource.isWorking){
             sb = new StringBuffer();
             doUploadGps();
         }
@@ -695,13 +720,25 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                         double d_lng = Double.parseDouble(lng);
 
                         addmarker(d_lat,d_lng);
-                        speech();
+                        speech("距离你150米有乘客挥手");
                     }
                     //成功挥手匹配，弹出确认
                     if(Constant.EVENT_HUISHOUMATCH.equals(event)){
                         matchingKey = jsonObject.getString("matchingKey");
                         showTipsDialog("已成功为您匹配到乘客，乘客是否已上车？",2,confirmIsTripClickListener);
+                        speech("已成功为您匹配到乘客，乘客是否已上车？");
                     }
+                    //成功生成订单
+                    if(Constant.EVENT_NEWORDER.equals(event)){
+                        isTrip = "1";
+                        orderNo = jsonObject.getString("orderNo");
+                        String carId = jsonObject.getString("carId");
+                        String licensePlate = jsonObject.getString("licensePlate");
+                    }
+                    //到达，结束订单 乘客才有
+//                    if(Constant.EVENT_ARRIVE.equals(event)){
+//                        orderNo = jsonObject.getString("orderNo");
+//                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -719,10 +756,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                 //短按
                 Toast.makeText(this,"短按",Toast.LENGTH_SHORT).show();
             }
-//            else {
-//                //长按
-//                Toast.makeText(this,"长按",Toast.LENGTH_SHORT).show();
-//            }
             return true;
         }
         if (keyCode == KeyEvent.KEYCODE_BACK
