@@ -23,9 +23,7 @@ import android.view.animation.RotateAnimation;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.PopupWindow;
-import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
@@ -63,7 +61,6 @@ import com.zhtaxi.haodidriver.util.UpdateManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +82,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     private static final int HANDLER_UPLOADGPS = 3;
     private static final int SUCCESSCODE_CONFIRMWAVE = 4;
     private static final int SUCCESSCODE_ARRIVEDESTINATION = 5;
+    private static final int SUCCESSCODE_ONLINE = 6;
+    private static final int SUCCESSCODE_OFFLINE = 7;
 
     public static boolean isForeground = false;
     public static final String KEY_MESSAGE = "message";
@@ -285,6 +284,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     PublicResource.isWorking = false;
                     PublicResource.isFull = false;
                     doCancelUpdateGps();
+
+                    //回传服务器确认收车
+                    HttpUtil.doGet(TAG,MainActivity.this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_OFFLINE,
+                            RequestAddress.offline,generateRequestMap());
                 }
                 //收车中，切换为出车
                 else {
@@ -307,6 +310,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                         sb = new StringBuffer();
                         doUploadGps();
                     }
+
+                    //回传服务器确认出车
+                    HttpUtil.doGet(TAG,MainActivity.this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_ONLINE,
+                            RequestAddress.online,generateRequestMap());
                 }
                 break;
             case R.id.btn_control_empty:
@@ -500,6 +507,9 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         }
     };
 
+    /**
+     * 语音合成
+     */
     private void speech(String content) {
         //1.创建SpeechSynthesizer对象, 第二个参数：本地合成时传InitListener
         SpeechSynthesizer mTts = SpeechSynthesizer.createSynthesizer(this, null);
@@ -512,7 +522,9 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         mTts.startSpeaking(content, mSynListener);
     }
 
-    //合成监听器
+    /**
+     * 语音合成监听器
+     */
     private SynthesizerListener mSynListener = new SynthesizerListener() {
 
         //会话结束回调接口，没有错误时，error为null
@@ -548,9 +560,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     private PopupWindow other_popupWindow;
     private LinearLayout popupWindowLayout;
-    private ListView popupwindow_listview;
-    private List<Map<String, Object>> popupWindowList = new ArrayList<>();
-    private SimpleAdapter popupWindowAdapter;
 
     /**
      * 弹出设置
@@ -562,38 +571,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
             popupWindowLayout = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.popupwindow_view, null);
             popupWindowLayout.setHorizontalGravity(Gravity.CENTER);
 
-//            popupwindow_listview = (ListView) popupWindowLayout.findViewById(R.id.popupwindow_listview);
-//            popupwindow_listview.setClickable(true);
-//            LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) popupwindow_listview.getLayoutParams();
-//            layoutParams.width = screenWidth / 3 - getResources().getDimensionPixelSize(R.dimen.line) * 2;
-//            layoutParams.height = LinearLayout.LayoutParams.WRAP_CONTENT;
-//            layoutParams.gravity = Gravity.CENTER;
-//            popupwindow_listview.setLayoutParams(layoutParams);
-//
-//            popupwindow_listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                @Override
-//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//                    other_popupWindow.dismiss();
-//
-//                    switch ((int) ((Map<String, Object>) parent.getAdapter().getItem(position)).get("tag")) {
-//                        case 1:
-//                            Intent openCameraIntent = new Intent(MainActivity.this, CaptureActivity.class);
-//                            startActivity(openCameraIntent);
-//                            break;
-//                        case 2:
-//                            findViewById(R.id.btn_message).performClick();
-//                            break;
-//
-//                    }
-//
-//                }
-//            });
-
-//            popupWindowAdapter = new SimpleAdapter(this, popupWindowList, R.layout.popupwindow_item_view,
-//                    new String[]{"img", "txt"}, new int[]{R.id.img, R.id.txt});
-//            popupwindow_listview.setAdapter(popupWindowAdapter);
-
             other_popupWindow = new PopupWindow(popupWindowLayout,
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, false);
             other_popupWindow.setBackgroundDrawable(new BitmapDrawable(getResources()));
@@ -602,22 +579,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
             other_popupWindow.setOutsideTouchable(false);
 
         }
-
-//        popupWindowList.clear();
-//
-//        Map<String, Object> item = new HashMap<>();
-//        item.put("img", R.mipmap.start);
-//        item.put("txt", "扫一扫");
-//        item.put("tag", 1);
-//        popupWindowList.add(item);
-//
-//        item = new HashMap<>();
-//        item.put("img", R.mipmap.end);
-//        item.put("txt", "消息");
-//        item.put("tag", 2);
-//        popupWindowList.add(item);
-
-//        popupWindowAdapter.notifyDataSetChanged();
 
         other_popupWindow.showAsDropDown(findViewById(R.id.btn_control_empty), screenWidth , 0);
     }
@@ -690,6 +651,9 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         super.onDestroy();
     }
 
+    /**
+     * 接收推送自定义通知内容
+     */
     private MessageReceiver mMessageReceiver;
 
     public void registerMessageReceiver() {

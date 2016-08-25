@@ -18,5 +18,7 @@ public class RequestAddress {
     public final static String suggestion = APP_URL + "suggestion";
     public final static String confirmWave = APP_URL + "confirmWave";
     public final static String arriveDestination = APP_URL + "arriveDestination";
+    public final static String online = APP_URL + "online";
+    public final static String offline = APP_URL + "offline";
 
 }
