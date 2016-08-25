@@ -40,6 +40,8 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechSynthesizer;
@@ -52,15 +54,19 @@ import com.nickkong.commonlibrary.util.Tools;
 import com.umeng.analytics.MobclickAgent;
 import com.zhtaxi.haodidriver.HaodidriverApplication;
 import com.zhtaxi.haodidriver.R;
+import com.zhtaxi.haodidriver.domain.Drivers;
+import com.zhtaxi.haodidriver.domain.Passengers;
 import com.zhtaxi.haodidriver.util.Constant;
 import com.zhtaxi.haodidriver.util.LogUtil;
 import com.zhtaxi.haodidriver.util.PublicResource;
 import com.zhtaxi.haodidriver.util.RequestAddress;
 import com.zhtaxi.haodidriver.util.UpdateManager;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +93,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     public static boolean isForeground = false;
     public static final String KEY_MESSAGE = "message";
+    private List<Drivers> arrays_drivers;
+    private List<Passengers> arrays_passengers;
     private long exitTime = 0;
     private int screenWidth;
     private LocationService locationService;
@@ -385,6 +393,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     .longitude(lng).build();
             mBaiduMap.setMyLocationData(locData);
 
+            if(mylocation!=null){
+                getNearByUsers();
+            }
+
             if (isFirstLoc) {
 
                 isFirstLoc = false;
@@ -395,6 +407,54 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
             }
         }
+    }
+
+    /**
+     * 添加附近司机
+     */
+    private void addDrivers(Drivers drivers){
+
+        mBaiduMap.clear();
+
+        String lat = drivers.getLat();
+        String lng = drivers.getLng();
+
+        Double dlat = Double.parseDouble(lat);
+        Double dlng = Double.parseDouble(lng);
+
+        LatLng point = new LatLng(dlat, dlng);
+        //构建Marker图标
+        BitmapDescriptor bitmap = BitmapDescriptorFactory
+                .fromResource(R.mipmap.car_bearing);
+        //构建MarkerOption，用于在地图上添加Marker
+        OverlayOptions makeroption = new MarkerOptions()
+                .position(point).icon(bitmap).title("0");
+        //在地图上添加Marker，并显示
+        mBaiduMap.addOverlay(makeroption);
+    }
+
+    /**
+     * 添加附近挥手乘客
+     */
+    private void addPassengers(Passengers passengers){
+
+        mBaiduMap.clear();
+
+        String lat = passengers.getLat();
+        String lng = passengers.getLng();
+
+        Double dlat = Double.parseDouble(lat);
+        Double dlng = Double.parseDouble(lng);
+
+        LatLng point = new LatLng(dlat, dlng);
+        //构建Marker图标
+        BitmapDescriptor bitmap = BitmapDescriptorFactory
+                .fromResource(R.mipmap.hand);
+        //构建MarkerOption，用于在地图上添加Marker
+        OverlayOptions makeroption = new MarkerOptions()
+                .position(point).icon(bitmap).title("1");
+        //在地图上添加Marker，并显示
+        mBaiduMap.addOverlay(makeroption);
     }
 
     /**
@@ -444,9 +504,36 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                         e.printStackTrace();
                     }
                     break;
-                //获取附近车辆
+                //获取附近车辆和乘客
                 case SUCCESSCODE_QUERYNEARBYUSERS:
+                    try {
+                        JSONObject jsonObject = new JSONObject(message);
+                        String result = jsonObject.getString("result");
+                        if(Constant.RECODE_SUCCESS.equals(result)){
 
+//                            JSONArray drivers = jsonObject.getJSONArray("drivers");
+//                            Type listType_drivers = new TypeToken<List<Drivers>>() {}.getType();
+//                            arrays_drivers = new Gson().fromJson(drivers.toString(), listType_drivers);
+//                            if(arrays_drivers!=null){
+//                                for(int i=0;i<arrays_drivers.size();i++){
+//                                    addDrivers(arrays_drivers.get(i));
+//                                }
+//                            }
+
+//TODO
+                            JSONArray passengers = jsonObject.getJSONArray("passengers");
+                            Type listType_passengers = new TypeToken<List<Passengers>>() {}.getType();
+                            arrays_passengers = new Gson().fromJson(passengers.toString(), listType_passengers);
+                            if(arrays_passengers!=null){
+                                for(int i=0;i<arrays_passengers.size();i++){
+                                    addPassengers(arrays_passengers.get(i));
+                                }
+                            }
+
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 //定时上传GPS
                 case HANDLER_UPLOADGPS:

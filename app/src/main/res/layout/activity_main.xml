@@ -5,6 +5,18 @@
     >
 
     <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/TEXT_BG">
+
+        <com.baidu.mapapi.map.MapView
+            android:id="@+id/bmapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true" />
+    </RelativeLayout>
+
+    <RelativeLayout
         android:id="@id/titlebar"
         android:layout_width="match_parent"
         android:layout_height="@dimen/maintitle"
@@ -41,19 +53,6 @@
             android:layout_marginRight="@dimen/interval_E"
             android:text="更多"/>
 
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/titlebar"
-        android:background="@color/TEXT_BG">
-
-        <com.baidu.mapapi.map.MapView
-            android:id="@+id/bmapView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clickable="true" />
     </RelativeLayout>
 
     <RelativeLayout
