@@ -46,4 +46,6 @@
     <item type="id" name="btn_control_empty"/>
     <item type="id" name="btn_control_full"/>
     <item type="id" name="btn_control_ring"/>
+    <item type="id" name="btn_arrive"/>
+    <item type="id" name="rl_statasbar"/>
 </resources>

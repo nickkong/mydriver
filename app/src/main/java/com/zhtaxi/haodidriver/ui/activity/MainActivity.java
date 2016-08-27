@@ -111,6 +111,7 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 
     private Button btn_control_start,btn_control_empty,btn_control_full;
     private ImageView btn_control_ring;
+    private View rl_statasbar;
 
     private String matchingKey,isTrip,orderNo;
 
@@ -156,7 +157,10 @@ public class MainActivity extends BaseActivity implements OnClickListener{
         btn_control_full.setOnClickListener(this);
         Button btn_me = (Button) findViewById(R.id.btn_me);
         btn_me.setOnClickListener(this);
+        Button btn_arrive = (Button) findViewById(R.id.btn_arrive);
+        btn_arrive.setOnClickListener(this);
         btn_control_ring = (ImageView) findViewById(R.id.btn_control_ring);
+        rl_statasbar = findViewById(R.id.rl_statasbar);
     }
 
     /**
@@ -273,6 +277,12 @@ public class MainActivity extends BaseActivity implements OnClickListener{
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btn_me:
+                Map params1 = generateRequestMap();
+                params1.put("orderNo", "001270511475949440");
+                HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_ARRIVEDESTINATION,
+                        RequestAddress.arriveDestination,params1);
+                break;
+            case R.id.btn_arrive:
                 Map params = generateRequestMap();
                 params.put("orderNo", orderNo);
                 HttpUtil.doGet(TAG,this,mHandler, Constant.HTTPUTIL_FAILURECODE,SUCCESSCODE_ARRIVEDESTINATION,
@@ -520,7 +530,6 @@ public class MainActivity extends BaseActivity implements OnClickListener{
 //                                }
 //                            }
 
-//TODO
                             JSONArray passengers = jsonObject.getJSONArray("passengers");
                             Type listType_passengers = new TypeToken<List<Passengers>>() {}.getType();
                             arrays_passengers = new Gson().fromJson(passengers.toString(), listType_passengers);
@@ -550,7 +559,18 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                     break;
                 //到达，订单结束
                 case SUCCESSCODE_ARRIVEDESTINATION:
-                    isTrip = "0";
+
+                    try {
+                        JSONObject jsonObject = new JSONObject(message);
+                        String result = jsonObject.getString("result");
+                        if(Constant.RECODE_SUCCESS.equals(result)){
+                            isTrip = "0";
+                            rl_statasbar.setVisibility(View.GONE);
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                     break;
             }
         }
@@ -784,11 +804,8 @@ public class MainActivity extends BaseActivity implements OnClickListener{
                         orderNo = jsonObject.getString("orderNo");
                         String carId = jsonObject.getString("carId");
                         String licensePlate = jsonObject.getString("licensePlate");
+                        rl_statasbar.setVisibility(View.VISIBLE);
                     }
-                    //到达，结束订单 乘客才有
-//                    if(Constant.EVENT_ARRIVE.equals(event)){
-//                        orderNo = jsonObject.getString("orderNo");
-//                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();

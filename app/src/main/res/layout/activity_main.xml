@@ -56,6 +56,35 @@
     </RelativeLayout>
 
     <RelativeLayout
+        android:id="@id/rl_statasbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/maintitle"
+        android:layout_below="@id/titlebar"
+        android:background="@color/white"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="行程中..."
+            android:textSize="@dimen/F7"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="@dimen/interval_A"
+            android:textColor="@color/TEXT_MAIN"/>
+        <Button
+            android:id="@id/btn_arrive"
+            android:layout_width="70dp"
+            android:layout_height="35dp"
+            android:text="到达"
+            android:textSize="@dimen/F9"
+            android:textColor="@color/white"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="@dimen/interval_A"
+            android:background="@drawable/border_radius_mainsub_enable"/>
+    </RelativeLayout>
+
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
